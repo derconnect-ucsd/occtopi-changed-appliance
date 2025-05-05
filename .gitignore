@@ -1,0 +1,7 @@
+venv/
+*.csv
+*/config.json
+.DS_Store
+
+# allow CSV files in the raw folder
+ !**/raw/*.csv
