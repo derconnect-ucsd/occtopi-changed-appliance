@@ -1,12 +1,12 @@
 import pandas as pd
 import plotly.express as px
-import numpy
 
 # Define file paths
 # Represents the first appliance (formerly water dispenser)
 appliance_one_file_path = "C:/Users/User/Documents/Github/Changed Appliance Project/occtopi-changed-appliance/data/raw/water-data.csv"
 # Represents the second appliance (formerly printer)
-appliance_two_file_path = "c:/Users/User/Documents/Github/Changed Appliance Project/occtopi-changed-appliance/data/raw/printer-data.csv"
+appliance_two_file_path = "c:/Users/User/Documents/Github/Changed Appliance Project/occtopi-changed-appliance/data/raw/printer_baseline_data.csv"
+
 
 # Define statistic columns for consistent use
 stat_columns_for_analysis = ['count', 'mean',
@@ -43,14 +43,37 @@ if 'Hours_Elapsed' in appliance_one_raw_df.columns and not appliance_one_raw_df[
 
 appliance_two_raw_df = pd.read_csv(
     appliance_two_file_path, encoding='utf-8-sig')
-rename_map_appliance_two = {appliance_two_raw_df.columns[0]: 'Timestamp',
-                            appliance_two_raw_df.columns[1]: 'Value'}
+
+# Select and rename necessary columns for Appliance Two (Printer Baseline Data)
+# Columns from printer_baseline_data.csv: _time, voltage, current
+# This step also effectively removes unused columns as requested.
+columns_to_select_appliance_two = ['_time', 'voltage', 'current']
+appliance_two_raw_df = appliance_two_raw_df[columns_to_select_appliance_two]
+
+rename_map_appliance_two = {'_time': 'Timestamp',
+                            'voltage': 'Voltage',
+                            'current': 'Current'}
 appliance_two_raw_df.rename(columns=rename_map_appliance_two, inplace=True)
+
+# Convert Timestamp to datetime
 appliance_two_raw_df['Timestamp'] = pd.to_datetime(
-    appliance_two_raw_df['Timestamp'])
-appliance_two_raw_df['Value'] = pd.to_numeric(
-    appliance_two_raw_df['Value'], errors='coerce')
-appliance_two_raw_df.dropna(subset=['Value'], inplace=True)
+    appliance_two_raw_df['Timestamp'], errors='coerce', format='mixed')
+
+# Convert Voltage and Current to numeric, coercing errors
+appliance_two_raw_df['Voltage'] = pd.to_numeric(
+    appliance_two_raw_df['Voltage'], errors='coerce')
+appliance_two_raw_df['Current'] = pd.to_numeric(
+    appliance_two_raw_df['Current'], errors='coerce')
+
+# Calculate Wattage (Value = Voltage * Current)
+appliance_two_raw_df['Value'] = appliance_two_raw_df['Voltage'] * \
+    appliance_two_raw_df['Current']
+
+appliance_two_raw_df.dropna(subset=['Timestamp', 'Value'], inplace=True)
+# Drop intermediate Voltage and Current columns as 'Value' (wattage) is the target
+appliance_two_raw_df.drop(
+    columns=['Voltage', 'Current'], inplace=True, errors='ignore')
+
 # Sort by Timestamp before calculating elapsed time
 appliance_two_raw_df.sort_values(
     by='Timestamp', inplace=True, ignore_index=True)
@@ -83,7 +106,7 @@ if not combined_df.empty and 'Hours_Elapsed' in combined_df.columns and not comb
         y='Value',
         color='DataSource',
         title='Comparison of Data by Hours Since Start (Appliance One vs. Appliance Two)',
-        labels={'Hours_ Elapsed': 'Hours Since Start of Data',
+        labels={'Hours_Elapsed': 'Hours Since Start of Data',
                 'Value': 'Value (watts)'}
     )
     fig_elapsed_time_comparison.show()
