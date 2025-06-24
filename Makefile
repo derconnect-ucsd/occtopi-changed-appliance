@@ -1,5 +1,5 @@
 run: venv/Scripts/activate
-	venv/Scripts/python.exe src/data-visualization.py
+	venv/Scripts/python.exe src/ENLACE/kc_temp.py
 
 update_requirements: venv/Scripts/activate
 	venv/Scripts/pip.exe freeze > requirements.txt
